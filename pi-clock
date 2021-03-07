@@ -10,38 +10,48 @@ from getkey import getkey, keys
 location = os.path.dirname(os.path.realpath(__file__))
 sound_dir = location+'/sounds'
 
+
+COLOR_TEMPLATE='\u001b[38;5;{}m'
+RESET_COLOR = '\u001b[0m'
+
+def colorize(text,colorvalue):
+    return COLOR_TEMPLATE.format(colorvalue)+text+RESET_COLOR
+
 class Timer:
-    def __init__(self,hours,minutes,seconds,message="Complete!"):
+    def __init__(self,hours,minutes,seconds,custom_message="Complete!"):
         self.hours = hours
         self.minutes = minutes
         self.seconds = seconds
-        self.message=message
+        self.custom_message=custom_message
+        #adjust values based on their unit
+        while self.minutes>59 or self.seconds>59:
+            while self.minutes>59:
+                self.hours+=1
+                self.minutes-=60
+
+            while self.seconds>59:
+                self.minutes+=1
+                self.seconds-=60
 
     def start(self):
         while self.seconds!=0 or self.minutes!=0 or self.hours!=0:
             self.show()
             time.sleep(1)
-            if self.seconds==0:
-                if self.minutes==0:
-                    self.hours-=1
-                    self.minutes=59
-                    self.seconds=60
-                else:
-                    self.minutes-=1
-                    self.seconds=60
             self.seconds -=1
-            if self.seconds==0:
-                if self.minutes>0:
-                    self.seconds = 60
-                    self.minutes -=1
-            if self.minutes==0:
-                if self.hours>0:
-                    self.hours-=1
-                    self.minutes=60
-        # print("\u001b[38;5;200m"+self.message+"\u001b[0m",end='\r')
+            self.adjust()
         print()
         self.alert()
            
+    def adjust(self):
+        if self.seconds<0:
+            if self.minutes>0:
+                self.seconds = 59
+                self.minutes -=1
+            elif self.minutes==0:
+                if self.hours>0:
+                    self.hours-=1
+                    self.minutes=59
+                    self.seconds=59
 
     def show(self):
         end='\r'
@@ -53,27 +63,35 @@ class Timer:
             seconds='0'+str(seconds)
         if minutes<10:
             minutes='0'+str(minutes)
-        if hours<10:
+        if (self.hours+1)==1000:
             hours='0'+str(hours)
+        if (self.hours+1)==100:
+            hours='0'+str(hours)
+        if self.hours<10:
+            hours='0'+str(hours)
+ 
         progress = f'{hours}:{minutes}:{seconds}'        
-        print("\tTimer in progress : \u001b[38;5;105m"+progress+"\u001b[0m",end=end)
+        print("\tTimer in progress : "+colorize(progress,87),end=end)
 
     def alert(self):
-        print("\t\t\u001b[38;5;148m"+self.message+'\u001b[0m')
+        print(ascii_alert)
+        print('\t\t'+colorize(self.custom_message,118))
+        print('\t'+colorize('PRESS CTRL + Z TO STOP',220))
         os.chdir(sound_dir)
-        playsound("kim_possible_alert.mp3")
+        while True:
+            playsound("kim_possible_alert.mp3")
 
 
 
 # timer = Timer(0,0,1)
 # timer.start()
 
-ascii='''
-    ░░█▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
-    ██▀▀▀██▀▀▀▀▀▀██▀▀▀██
-    █▒▒▒▒▒█▒▀▀▀▀▒█▒▒▒▒▒█
-    █▒▒▒▒▒█▒████▒█▒▒▒▒▒█
-    ██▄▄▄██▄▄▄▄▄▄██▄▄▄██
+ascii_alert='''
+\t    ░░█▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
+\t    ██▀▀▀██▀▀▀▀▀▀██▀▀▀██
+\t    █▒▒▒▒▒█▒▀▀▀▀▒█▒▒▒▒▒█
+\t    █▒▒▒▒▒█▒████▒█▒▒▒▒▒█
+\t    ██▄▄▄██▄▄▄▄▄▄██▄▄▄██
 '''
 clear_line='\t                    '
 class Alarm:
@@ -98,29 +116,33 @@ class Alarm:
         alarm_time = f'{hour}:{minute}:00'
         while current_time!=alarm_time:
             current_time = datetime.now().strftime("%H:%M:%S")
-            print(f'Alarm set for \u001b[38;5;200m{alarm_time}\u001b[0m, current time: \u001b[38;5;208m{current_time}\u001b[0m',end='\r')
+            print(f'\tAlarm set for {COLOR_TEMPLATE.format(51)}{alarm_time}{RESET_COLOR}, current time: {COLOR_TEMPLATE.format(208)}{current_time}{RESET_COLOR}',end='\r')
             time.sleep(1)
         print()
-        print("\u001b[38;5;118m"+self.custom_message+'\u001b[0m')
         self.alert()
         
     def alert(self):
+        print(ascii_alert)
+        print('\t\t'+colorize(self.custom_message,118))
+        print('\t'+colorize('PRESS CTRL + Z TO STOP',220))
         os.chdir(sound_dir)
-        playsound("Huawei - Sakura Drop.mp3")
+        while True:
+            playsound("Huawei - Sakura Drop.mp3")
 
 def getunitvalue(unit):
     #returns a number ranging from 0 to 59 for units second and minute, controlleed by arrow keys
     value = 0
     key=''
+    print()
     while key!=keys.ENTER:
         if value<10:
             value_str='0'+str(value)
         else:
             value_str=str(value)
-        print(f'\t{unit} : {value_str}',end='\r')
+        print(f'\t\t{unit} : {value_str}',end='\r')
         key = getkey()
         if key==keys.UP:
-            if value==59:
+            if value==59 and unit!='Hour':
                 value=0
             else:
                 value+=1
@@ -135,8 +157,9 @@ def getperiod():
     #returns am or pm
     period = 'am'
     key = ''
+    print()
     while key!=keys.ENTER:
-        print(f'\tPeriod : {period}',end='\r')
+        print(f'\t\tPeriod : {period}',end='\r')
         key = getkey()
         if key==keys.UP or key==keys.DOWN:
             if period=='am':
@@ -149,12 +172,13 @@ def gethour():
     #returns number ranging from 1 to 12
     value=1
     key=''
+    print()
     while key!=keys.ENTER:
         if value<10:
             value_str='0'+str(value)
         else:
             value_str=str(value)
-        print(f'\tHour : {value_str}',end='\r')
+        print(f'\t\tHour : {value_str}',end='\r')
         key=getkey()
         if key==keys.UP:
             if value==12:
@@ -168,16 +192,27 @@ def gethour():
                 value-=1
     return value
 
+def displayinteractivemenu():
+    clearscreen=''
+    if os.name=='nt':
+        clearscreen='cls'
+    else:
+        clearscreen='clear'
+    os.system(clearscreen)
+    print(ascii_alert)
+    print("\t "+colorize("'A' to set new alarm",222))
+    print("\t "+colorize("'T' to create new timer",217))
+    print("\t "+colorize("'S' to start new stopwatch",202))
+    print("\t "+colorize("'Q' or 'E' to exit: ",80),end='')
+
 def interactive():
     while True:
-        os.system("clear")
-        print(ascii)
-        print("\t'A' to set new alarm,\n\t'T' to create new timer,\n\t'S' to start new stopwatch, \n\t'Q' or 'E' to exit: ",end='')
+        displayinteractivemenu()
         while True:
             opt = input().lower()
             if opt=='a' or opt=='t' or opt=='s' or opt=='q' or opt=='e':
                 break
-            print("\t'A' to set new alarm,\n\t'T' to create new timer,\n\t'S' to start new stopwatch, \n\t'Q' or 'E' to exit: ",end='')
+            displayinteractivemenu()
         if opt=='q' or opt=='e':
             break
         if opt=='a':
@@ -185,18 +220,21 @@ def interactive():
             minute = getunitvalue('Minute')
             period = getperiod()
             alarm = Alarm(hour,minute,period)
+            print('\n')
+            alarm.start()
         elif opt=='t':
-            pass
+            hours = getunitvalue('Hour')
+            minutes = getunitvalue('Minute')
+            seconds = getunitvalue('Second')
+            timer = Timer(hours,minutes,seconds)
+            print('\n')
+            timer.start()
         elif opt=='s':
             pass
             
 
 def main():
-    hours = getunitvalue('Hour')
-    minutes = getunitvalue('Minute')
-    seconds = getunitvalue('Second')
-    timer = Timer(hours,minutes,seconds)
-    timer.start()
+    interactive()
 
 if __name__ == '__main__':
     main()
