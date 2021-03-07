@@ -200,10 +200,18 @@ def displayinteractivemenu():
         clearscreen='clear'
     os.system(clearscreen)
     print(ascii_alert)
-    print("\t "+colorize("'A' to set new alarm",222))
-    print("\t "+colorize("'T' to create new timer",217))
-    print("\t "+colorize("'S' to start new stopwatch",202))
-    print("\t "+colorize("'Q' or 'E' to exit: ",80),end='')
+    #222 271 202 80
+    #64 108 158 132
+    #247 254 208 75
+    #176 220 150 122
+    color1=176
+    color2=220
+    color3=150
+    color4=122
+    print("\t "+colorize("'A' to set new alarm",color1))
+    print("\t "+colorize("'T' to create new timer",color2))
+    print("\t "+colorize("'S' to start new stopwatch",color3))
+    print("\t "+colorize("'Q' or 'E' to exit: ",color4),end='')
 
 def interactive():
     while True:
