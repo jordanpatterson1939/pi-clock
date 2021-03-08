@@ -238,19 +238,12 @@ def interactive():
     # alarm_processes = []
     while True:
         displayinteractivemenu()
-        while True:
-            opt = input().lower()
-            if opt=='a' or opt=='t' or opt=='s' or opt=='q' or opt=='e':
-                break
-            displayinteractivemenu()
+        opt = input().lower()
         if opt=='q' or opt=='e':
             break
         if opt=='a':
             alarm = create_new_alarm()
             print('\n')
-            # p = multiprocessing.Process(target=alarm.start,args=(False,))
-            # alarm_processes.append(p)
-            # p.start()
             alarm.start()
         elif opt=='t':
             timer = create_new_timer()
@@ -258,8 +251,6 @@ def interactive():
             timer.start()
         elif opt=='s':
             pass
-    # for process in alarm_processes:
-    #     process.terminate()
 
 def create_new_timer():
     hours = getunitvalue('Hour')
