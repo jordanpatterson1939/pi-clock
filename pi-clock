@@ -4,6 +4,7 @@
 import os
 import time
 import argparse
+import multiprocessing
 from datetime import datetime
 from playsound import playsound
 from getkey import getkey, keys
@@ -18,12 +19,17 @@ RESET_COLOR = '\u001b[0m'
 def colorize(text,colorvalue):
     return COLOR_TEMPLATE.format(colorvalue)+text+RESET_COLOR
 
+def playaudio_wrapper(soundfile):
+    while True:
+        playsound(soundfile)
+
 class Timer:
     def __init__(self,hours,minutes,seconds,custom_message="Complete!"):
         self.hours = hours
         self.minutes = minutes
         self.seconds = seconds
         self.custom_message=custom_message
+
         #adjust values based on their unit
         while self.minutes>59 or self.seconds>59:
             while self.minutes>59:
@@ -75,17 +81,17 @@ class Timer:
         print("\tTimer in progress : "+colorize(progress,87),end=end)
 
     def alert(self):
+        soundfile = 'r2_d2(1).mp3'
+        stopper = ''
         print(ascii_alert)
         print('\t\t'+colorize(self.custom_message,118))
-        print('\t'+colorize('PRESS CTRL + Z TO STOP',220))
+        print('\t  '+colorize('PRESS ENTER TO STOP',220))
         os.chdir(sound_dir)
-        while True:
-            playsound("kim_possible_alert.mp3")
-
-
-
-# timer = Timer(0,0,1)
-# timer.start()
+        p=multiprocessing.Process(target=playaudio_wrapper,args=(soundfile,))
+        p.start()
+        while stopper!=keys.ENTER:
+            stopper=getkey()
+        p.terminate()
 
 ascii_alert='''
 \t    ░░█▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
@@ -93,6 +99,13 @@ ascii_alert='''
 \t    █▒▒▒▒▒█▒▀▀▀▀▒█▒▒▒▒▒█
 \t    █▒▒▒▒▒█▒████▒█▒▒▒▒▒█
 \t    ██▄▄▄██▄▄▄▄▄▄██▄▄▄██
+'''
+ascii_main='''
+\t   ░░░░░░░▄█▄▄▄█▄
+\t   ▄▀░░░░▄▌─▄─▄─▐▄░░░░▀▄
+\t   █▄▄█░░▀▌─▀─▀─▐▀░░█▄▄█
+\t   ░▐▌░░░░▀▀███▀▀░░░░▐▌
+\t   ████░▄█████████▄░████
 '''
 clear_line='\t                    '
 class Alarm:
@@ -102,7 +115,7 @@ class Alarm:
         self.period=period
         self.custom_message=custom_message
 
-    def start(self):
+    def start(self,verbose=True):
         current_time = ''
         hour = self.hour
         minute = self.minute
@@ -117,18 +130,24 @@ class Alarm:
         alarm_time = f'{hour}:{minute}:00'
         while current_time!=alarm_time:
             current_time = datetime.now().strftime("%H:%M:%S")
-            print(f'\tAlarm set for {COLOR_TEMPLATE.format(51)}{alarm_time}{RESET_COLOR}, current time: {COLOR_TEMPLATE.format(208)}{current_time}{RESET_COLOR}',end='\r')
+            if verbose:
+                print(f'\tAlarm set for {COLOR_TEMPLATE.format(51)}{alarm_time}{RESET_COLOR}, current time: {COLOR_TEMPLATE.format(208)}{current_time}{RESET_COLOR}',end='\r')
             time.sleep(1)
         print()
         self.alert()
         
     def alert(self):
+        soundfile='Huawei - Sakura Drop.mp3'
+        stopper=''
         print(ascii_alert)
         print('\t\t'+colorize(self.custom_message,118))
-        print('\t'+colorize('PRESS CTRL + Z TO STOP',220))
+        print('\t   '+colorize('PRESS ENTER TO STOP',220))
         os.chdir(sound_dir)
-        while True:
-            playsound("Huawei - Sakura Drop.mp3")
+        p=multiprocessing.Process(target=playaudio_wrapper,args=(soundfile,))
+        p.start()
+        while stopper!=keys.ENTER:
+            stopper=getkey()
+        p.terminate()
 
 def getunitvalue(unit):
     #returns a number ranging from 0 to 59 for units second and minute, controlleed by arrow keys
@@ -199,22 +218,24 @@ def displayinteractivemenu():
         clearscreen='cls'
     else:
         clearscreen='clear'
-    os.system(clearscreen)
-    print(ascii_alert)
+    # os.system(clearscreen)
+    print(ascii_main)
     #222 271 202 80
     #64 108 158 132
     #247 254 208 75
-    #176 220 150 122
-    color1=176
-    color2=220
-    color3=150
-    color4=122
+    #98 202 208 214
+    #12 33 115 158
+    color1=247
+    color2=254
+    color3=208
+    color4=75
     print("\t "+colorize("'A' to set new alarm",color1))
     print("\t "+colorize("'T' to create new timer",color2))
     print("\t "+colorize("'S' to start new stopwatch",color3))
     print("\t "+colorize("'Q' or 'E' to exit: ",color4),end='')
 
 def interactive():
+    # alarm_processes = []
     while True:
         displayinteractivemenu()
         while True:
@@ -225,8 +246,11 @@ def interactive():
         if opt=='q' or opt=='e':
             break
         if opt=='a':
-            alarm= create_new_alarm()
+            alarm = create_new_alarm()
             print('\n')
+            # p = multiprocessing.Process(target=alarm.start,args=(False,))
+            # alarm_processes.append(p)
+            # p.start()
             alarm.start()
         elif opt=='t':
             timer = create_new_timer()
@@ -234,6 +258,8 @@ def interactive():
             timer.start()
         elif opt=='s':
             pass
+    # for process in alarm_processes:
+    #     process.terminate()
 
 def create_new_timer():
     hours = getunitvalue('Hour')
@@ -261,10 +287,12 @@ def main():
     # interactive()
     if args.timer:
         timer = create_new_timer()
+        print('\n')
         timer.start()
 
     if args.alarm:
         alarm = create_new_alarm()
+        print('\n')
         alarm.start()
 
     if args.stopwatch:
