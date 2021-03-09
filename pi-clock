@@ -5,6 +5,7 @@ import os
 import time
 import argparse
 import multiprocessing
+import threading
 from datetime import datetime
 from playsound import playsound
 from getkey import getkey, keys
@@ -92,6 +93,120 @@ class Timer:
         while stopper!=keys.ENTER:
             stopper=getkey()
         p.terminate()
+
+
+class Stopwatch:
+    def __init__(self):
+        self.hour=0
+        self.minute=0
+        self.second=0
+        self.centisecond=0
+        self.paused = True
+        self.lapcount=1
+        self.exitted = False
+
+    def run(self):
+        centisecond = 0.01
+        second = 1
+        clear_line=' '*50
+        while True:
+            self.display()
+            time.sleep(centisecond)
+            if not self.paused:
+                self.centisecond+=.01
+                self.adjust()
+            else:
+                #blink text every half of a second
+                time.sleep(second/2)
+                print(clear_line,end='\r')
+                time.sleep(second/2)
+            if self.exitted:
+                break
+
+    def start(self):
+        t = threading.Thread(target=self.run,daemon=True)
+        key = ''
+        print(ascii_stopwatch)
+        print('\t   (SPACE) to START/STOP\n\t   (r) to RESET\n\t   (l) to SPLIT LAP \n\t   (ENTER) to EXIT')
+        print()
+        t.start()
+        while key!=keys.ENTER:
+            key=getkey()
+            if key==keys.LATIN_SMALL_LETTER_L:
+                self.lap()
+            elif key==keys.LATIN_SMALL_LETTER_R:
+                self.reset()
+            elif key==keys.SPACE:
+                self.startorstop()
+            elif key==keys.ENTER:
+                self.exitted=True
+                break
+        print('\n')
+            
+
+    def adjust(self):
+        if self.centisecond>1:
+            if self.second<59:
+                self.second+=1
+                self.centisecond=0
+            else:
+                if self.minute<59:
+                    self.minute+=1
+                    self.second=0
+                    self.centisecond=0
+                else:
+                    self.hour+=1
+                    self.minute=0
+                    self.second=0
+                    self.centisecond=0
+
+    def display(self):
+        hours = self.hour
+        minutes = self.minute
+        seconds = self.second
+        centiseconds = self.centisecond
+
+        centiseconds = '{0:.0f}'.format(centiseconds*100)
+    
+        if seconds<10:
+            seconds = '0'+str(seconds)
+        if minutes<10:
+            minutes = '0'+str(minutes)
+        if (self.hour+1)==1000:
+            hours='0'+str(hours)
+        if (self.hour+1)==100:
+            hours='0'+str(hours)
+        if self.hour<10:
+            hours='0'+str(hours)
+
+        progress_str = f'Stopwatch {colorize(str(self.lapcount),255)}: {colorize(str(hours),118)}:{colorize(str(minutes),118)}:{colorize(str(seconds),118)}:{colorize(str(centiseconds),45)}'
+        print('\t  '+progress_str,end='\r')
+
+    def reset(self):
+        self.hour=0
+        self.minute=0
+        self.second=0
+        self.centisecond=0
+
+    def startorstop(self):
+        if self.paused:
+            self.paused=False
+        else:
+            self.paused=True
+
+    def lap(self):
+        self.lapcount+=1
+        self.reset()
+        print()
+
+
+ascii_stopwatch='''
+\t   ┏━━┳┓╋╋╋╋╋╋╋╋╋╋┏┓╋╋┏┓
+\t   ┃━━┫┗┳━┳━┳┳┳┳━┓┃┗┳━┫┗┓
+\t   ┣━━┃┏┫╋┃╋┃┃┃┃╋┗┫┏┫━┫┃┃
+\t   ┗━━┻━┻━┫┏┻━━┻━━┻━┻━┻┻┛
+\t   ╋╋╋╋╋╋╋┗┛
+'''
 
 ascii_alert='''
 \t    ░░█▀▀▀▀▀▀▀▀▀▀▀▀▀▀█
@@ -220,22 +335,20 @@ def displayinteractivemenu():
         clearscreen='clear'
     # os.system(clearscreen)
     print(ascii_main)
-    #222 271 202 80
+    #222 251 202 80
     #64 108 158 132
-    #247 254 208 75
     #98 202 208 214
     #12 33 115 158
-    color1=247
-    color2=254
+    color1=98
+    color2=202
     color3=208
-    color4=75
+    color4=214 
     print("\t "+colorize("'A' to set new alarm",color1))
     print("\t "+colorize("'T' to create new timer",color2))
     print("\t "+colorize("'S' to start new stopwatch",color3))
     print("\t "+colorize("'Q' or 'E' to exit: ",color4),end='')
 
 def interactive():
-    # alarm_processes = []
     while True:
         displayinteractivemenu()
         opt = input().lower()
@@ -250,7 +363,9 @@ def interactive():
             print('\n')
             timer.start()
         elif opt=='s':
-            pass
+            stopwatch = Stopwatch()
+            stopwatch.start()
+            print()
 
 def create_new_timer():
     hours = getunitvalue('Hour')
@@ -287,7 +402,9 @@ def main():
         alarm.start()
 
     if args.stopwatch:
-        print("Creating stopwatch")
+        stopwatch = Stopwatch()
+        stopwatch.start()
+
 
     if (not args.timer and not args.alarm and not args.stopwatch) or args.interactive:
         interactive()
