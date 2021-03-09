@@ -264,7 +264,7 @@ class Alarm:
         current_time = ''
         hour = self.hour
         minute = self.minute
-        if self.period=='pm'and self.hour>12:
+        if self.period=='pm' and self.hour!=12:
             hour = 12 + hour
         elif self.hour==12 and self.period=='am':
             hour = 12 + hour
@@ -275,11 +275,12 @@ class Alarm:
             minute = '0'+str(minute)
 
         alarm_time = f'{hour}:{minute}:00'
+        print('\tPress ctrl+c to cancel alarm. Starting. . .\n')
         try:
             while current_time!=alarm_time:
                 current_time = datetime.now().strftime("%H:%M:%S")
                 if verbose:
-                    print(f'\tAlarm set for {COLOR_TEMPLATE.format(51)}{alarm_time}{RESET_COLOR}, current time: {COLOR_TEMPLATE.format(208)}{current_time}{RESET_COLOR} ctrl+c to cancel alarm',end='\r')
+                    print(f'\tAlarm set for {COLOR_TEMPLATE.format(51)}{alarm_time}{RESET_COLOR}, current time: {COLOR_TEMPLATE.format(208)}{current_time}{RESET_COLOR}',end='\r')
                 time.sleep(1)
             print()
             self.alert()
