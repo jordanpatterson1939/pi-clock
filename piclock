@@ -3,6 +3,8 @@
 
 import os
 import time
+import json
+import random
 import argparse
 import multiprocessing
 import threading
@@ -10,15 +12,41 @@ from datetime import datetime
 from playsound import playsound
 from getkey import getkey, keys
 
+COLOR_TEMPLATE = '\u001b[38;5;{}m'
+RESET_COLOR = '\u001b[0m'
+
 location = os.path.dirname(os.path.realpath(__file__))
 sound_dir = location+'/sounds'
 
+def initialize():
+    location = os.path.dirname(os.path.realpath(__file__))
+    sound_dir = location+'/sounds'
+    home_dir = os.path.expanduser('~')
+    if not os.path.exists(home_dir+'/piclock.json'):
+        os.chdir(home_dir)
+        sounds = os.listdir(sound_dir)
+        sound_map = {}
+        for i in range(len(sounds)):
+            sound_map[i] = sounds[i]
+        settings = {}
+        settings["files"] = sound_map
+        settings["timer_alert"] = random.randint(0,len(sounds))
+        settings["alarm_alert"] = random.randint(0,len(sounds))
+        # print(settings['timer_alert'])
+        # print(settings['alarm_alert'])
+        os.chdir(home_dir)
+        with open('piclock.json','w') as file:
+            json.dump(settings,file)
+        return settings
+    else:
+        os.chdir(home_dir)
+        with open('piclock.json','r') as file:
+            data = json.load(file)
+        return data
 
-COLOR_TEMPLATE='\u001b[38;5;{}m'
-RESET_COLOR = '\u001b[0m'
-
-timer_alert_file='Minions.mp3'
-alarm_alert_file='Freshstart.mp3'
+settings=initialize()
+timer_alert_file=settings['files'][str(settings['timer_alert'])]
+alarm_alert_file=settings['files'][str(settings['alarm_alert'])]
 
 def colorize(text,colorvalue):
     return COLOR_TEMPLATE.format(colorvalue)+text+RESET_COLOR
