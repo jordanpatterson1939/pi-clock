@@ -5,7 +5,7 @@ with open("README.md","r") as fh:
 
 setuptools.setup(
     name="pi-clock",
-    version="1.0",
+    version="1.0.1",
     scripts=["piclock"],
     author="Jordan Patterson",
     author_email="jordanpatterson1939@gmail.com",
@@ -21,4 +21,5 @@ setuptools.setup(
     ],
     install_requires=['playsound','getkey'],
     python_requires='>=3',
+    include_package_data=True,
 )
