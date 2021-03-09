@@ -1,11 +1,16 @@
+import os
 import setuptools
 
 with open("README.md","r") as fh:
     long_description = fh.read()
 
+soundfiles = os.listdir('./sounds')
+for i in range(len(soundfiles)):
+    soundfiles[i] = 'sounds/'+soundfiles[i]
+
 setuptools.setup(
     name="pi-clock",
-    version="1.0.1",
+    version="1.0.5",
     scripts=["piclock"],
     author="Jordan Patterson",
     author_email="jordanpatterson1939@gmail.com",
@@ -22,4 +27,8 @@ setuptools.setup(
     install_requires=['playsound','getkey'],
     python_requires='>=3',
     include_package_data=True,
+    # package_dir={'pi-clock':'./'},
+    # package_data={'pi-clock':soundfiles},
+    data_files=[('sounds',soundfiles)],
+    # zip_safe=False,
 )

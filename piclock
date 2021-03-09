@@ -15,12 +15,14 @@ from getkey import getkey, keys
 COLOR_TEMPLATE = '\u001b[38;5;{}m'
 RESET_COLOR = '\u001b[0m'
 
-location = os.path.dirname(os.path.realpath(__file__))
-sound_dir = location+'/sounds'
+# location = os.path.dirname(os.path.realpath(__file__))
+# sound_dir = location+'/sounds'
+
+sound_dir = os.path.expanduser('~')+'/.local/sounds'
 
 def initialize():
-    location = os.path.dirname(os.path.realpath(__file__))
-    sound_dir = location+'/sounds'
+    # location = os.path.dirname(os.path.realpath(__file__))
+    # sound_dir = location+'/sounds'
     home_dir = os.path.expanduser('~')
     if not os.path.exists(home_dir+'/piclock.json'):
         os.chdir(home_dir)
@@ -32,8 +34,6 @@ def initialize():
         settings["files"] = sound_map
         settings["timer_alert"] = random.randint(0,len(sounds))
         settings["alarm_alert"] = random.randint(0,len(sounds))
-        # print(settings['timer_alert'])
-        # print(settings['alarm_alert'])
         os.chdir(home_dir)
         with open('piclock.json','w') as file:
             json.dump(settings,file)
@@ -264,7 +264,9 @@ class Alarm:
         current_time = ''
         hour = self.hour
         minute = self.minute
-        if self.period=='pm':
+        if self.period=='pm'and self.hour>12:
+            hour = 12 + hour
+        elif self.hour==12 and self.period=='am':
             hour = 12 + hour
         #add 0 to single didgit numbers
         if hour<10:
@@ -273,13 +275,17 @@ class Alarm:
             minute = '0'+str(minute)
 
         alarm_time = f'{hour}:{minute}:00'
-        while current_time!=alarm_time:
-            current_time = datetime.now().strftime("%H:%M:%S")
-            if verbose:
-                print(f'\tAlarm set for {COLOR_TEMPLATE.format(51)}{alarm_time}{RESET_COLOR}, current time: {COLOR_TEMPLATE.format(208)}{current_time}{RESET_COLOR}',end='\r')
-            time.sleep(1)
-        print()
-        self.alert()
+        try:
+            while current_time!=alarm_time:
+                current_time = datetime.now().strftime("%H:%M:%S")
+                if verbose:
+                    print(f'\tAlarm set for {COLOR_TEMPLATE.format(51)}{alarm_time}{RESET_COLOR}, current time: {COLOR_TEMPLATE.format(208)}{current_time}{RESET_COLOR} ctrl+c to cancel alarm',end='\r')
+                time.sleep(1)
+            print()
+            self.alert()
+        except KeyboardInterrupt:
+            print("\n\n\tAlarm has been cancelled. ")
+        
         
     def alert(self):
         stopper=''
