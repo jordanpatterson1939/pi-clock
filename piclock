@@ -56,7 +56,7 @@ def playaudio_wrapper(soundfile):
         playsound(soundfile)
 
 class Timer:
-    def __init__(self,hours,minutes,seconds,custom_message="Complete!"):
+    def __init__(self,hours,minutes,seconds,custom_message="Timer has run out!"):
         self.hours = hours
         self.minutes = minutes
         self.seconds = seconds
@@ -115,8 +115,8 @@ class Timer:
     def alert(self):
         stopper = ''
         print(ascii_alert)
-        print('\t\t'+colorize(self.custom_message,118))
-        print('\t  '+colorize('PRESS ENTER TO STOP',220))
+        print('\t     '+colorize(self.custom_message,118))
+        print('\t     '+colorize('PRESS ENTER TO STOP',42))
         os.chdir(sound_dir)
         p=multiprocessing.Process(target=playaudio_wrapper,args=(timer_alert_file,))
         p.start()
@@ -254,7 +254,7 @@ ascii_main='''
 '''
 clear_line='\t                    '
 class Alarm:
-    def __init__(self,hour,minute,period,custom_message='Complete'):
+    def __init__(self,hour,minute,period,custom_message='Waky waky, eggs n\' baky!'):
         self.hour=hour
         self.minute=minute
         self.period=period
@@ -284,8 +284,8 @@ class Alarm:
     def alert(self):
         stopper=''
         print(ascii_alert)
-        print('\t\t'+colorize(self.custom_message,118))
-        print('\t   '+colorize('PRESS ENTER TO STOP',220))
+        print('\t   '+colorize(self.custom_message,118))
+        print('\t   '+colorize('PRESS ENTER TO STOP',42))
         os.chdir(sound_dir)
         p=multiprocessing.Process(target=playaudio_wrapper,args=(alarm_alert_file,))
         p.start()
@@ -357,11 +357,11 @@ def gethour():
     return value
 
 def displayinteractivemenu():
-    clearscreen=''
-    if os.name=='nt':
-        clearscreen='cls'
-    else:
-        clearscreen='clear'
+    # clearscreen=''
+    # if os.name=='nt':
+    #     clearscreen='cls'
+    # else:
+    #     clearscreen='clear'
     # os.system(clearscreen)
     print(ascii_main)
     #222 251 202 80
