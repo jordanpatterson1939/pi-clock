@@ -36,13 +36,11 @@ def initialize():
         settings["alarm_alert"] = random.randint(0,len(sounds)-1)
         os.chdir(home_dir)
         with open('piclock.json','w') as file:
-            json.dump(settings,file)
-        return settings
-    else:
-        os.chdir(home_dir)
-        with open('piclock.json','r') as file:
-            data = json.load(file)
-        return data
+            json.dump(settings,file,indent=4)
+    os.chdir(home_dir)
+    with open('piclock.json','r') as file:
+        data = json.load(file)
+    return data
 
 settings=initialize()
 timer_alert_file=settings['files'][str(settings['timer_alert'])]

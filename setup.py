@@ -10,7 +10,7 @@ for i in range(len(soundfiles)):
 
 setuptools.setup(
     name="pi-clock",
-    version="1.0.7",
+    version="1.0.8",
     scripts=["piclock"],
     author="Jordan Patterson",
     author_email="jordanpatterson1939@gmail.com",
