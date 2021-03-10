@@ -32,8 +32,8 @@ def initialize():
             sound_map[i] = sounds[i]
         settings = {}
         settings["files"] = sound_map
-        settings["timer_alert"] = random.randint(0,len(sounds))
-        settings["alarm_alert"] = random.randint(0,len(sounds))
+        settings["timer_alert"] = random.randint(0,len(sounds)-1)
+        settings["alarm_alert"] = random.randint(0,len(sounds)-1)
         os.chdir(home_dir)
         with open('piclock.json','w') as file:
             json.dump(settings,file)
