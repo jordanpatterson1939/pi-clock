@@ -9,8 +9,14 @@ import argparse
 import multiprocessing
 import threading
 from datetime import datetime
-from playsound import playsound
 from getkey import getkey, keys
+
+try:
+    from playsound import playsound
+    playsound()
+except:
+    def playsound(path):
+        os.system("paplay {}".format(repr(path)))
 
 COLOR_TEMPLATE = '\u001b[38;5;{}m'
 RESET_COLOR = '\u001b[0m'
@@ -18,13 +24,18 @@ RESET_COLOR = '\u001b[0m'
 # location = os.path.dirname(os.path.realpath(__file__))
 # sound_dir = location+'/sounds'
 
-sound_dir = os.path.expanduser('~')+'/.local/sounds'
+if os.path.exists("/usr/share/sounds/"):
+    sound_dir = "/usr/share/sounds/"
+elif os.path.expanduser('~')+'/.local/sounds':
+    sound_dir = os.path.expanduser('~')+'/.local/sounds'
+else:
+    sound_dir = os.path.expanduser('~')+'/.local/share/sounds'
 
 def initialize():
     # location = os.path.dirname(os.path.realpath(__file__))
     # sound_dir = location+'/sounds'
     home_dir = os.path.expanduser('~')
-    if not os.path.exists(home_dir+'/piclock.json'):
+    if not os.path.exists(home_dir+'/.config/piclock.json'):
         os.chdir(home_dir)
         sounds = os.listdir(sound_dir)
         sound_map = {}
@@ -35,10 +46,10 @@ def initialize():
         settings["timer_alert"] = random.randint(0,len(sounds)-1)
         settings["alarm_alert"] = random.randint(0,len(sounds)-1)
         os.chdir(home_dir)
-        with open('piclock.json','w') as file:
+        with open('.config/piclock.json','w') as file:
             json.dump(settings,file,indent=4)
     os.chdir(home_dir)
-    with open('piclock.json','r') as file:
+    with open('.config/piclock.json','r') as file:
         data = json.load(file)
     return data
 
@@ -49,34 +60,43 @@ alarm_alert_file=settings['files'][str(settings['alarm_alert'])]
 def colorize(text,colorvalue):
     return COLOR_TEMPLATE.format(colorvalue)+text+RESET_COLOR
 
-def playaudio_wrapper(soundfile):
-    while True:
+def playaudio_wrapper(soundfile,bg=False):
+    if not bg:
+        while True:
+            playsound(soundfile)
+    else:
         playsound(soundfile)
 
 class Timer:
-    def __init__(self,hours,minutes,seconds,custom_message="Timer has run out!"):
+    def __init__(self,hours,minutes,seconds,custom_message="Timer has run out!",bg=False):
         self.hours = hours
         self.minutes = minutes
         self.seconds = seconds
         self.custom_message=custom_message
+        self.bg = bg
 
         #adjust values based on their unit
-        while self.minutes>59 or self.seconds>59:
+        if self.minutes>59 or self.seconds>59:
+            while self.seconds>59:
+                self.minutes+=1
+                self.seconds-=60
+            
             while self.minutes>59:
                 self.hours+=1
                 self.minutes-=60
 
-            while self.seconds>59:
-                self.minutes+=1
-                self.seconds-=60
-
     def start(self):
+        if self.bg:
+            if os.fork():
+                exit()
         while self.seconds!=0 or self.minutes!=0 or self.hours!=0:
-            self.show()
+            if not self.bg:
+                self.show()
             time.sleep(1)
             self.seconds -=1
             self.adjust()
-        print()
+        if not self.bg:
+            print()
         self.alert()
            
     def adjust(self):
@@ -107,20 +127,22 @@ class Timer:
         if self.hours<10:
             hours='0'+str(hours)
  
-        progress = f'{hours}:{minutes}:{seconds}'        
+        progress = f'{hours}:{minutes}:{seconds}'
         print("\tTimer in progress : "+colorize(progress,87),end=end)
 
     def alert(self):
         stopper = ''
-        print(ascii_alert)
-        print('\t     '+colorize(self.custom_message,118))
-        print('\t     '+colorize('PRESS ENTER TO STOP',42))
+        if not self.bg:
+            print(ascii_alert)
+            print('\t     '+colorize(self.custom_message,118))
+            print('\t     '+colorize('PRESS ENTER TO STOP',42))
         os.chdir(sound_dir)
-        p=multiprocessing.Process(target=playaudio_wrapper,args=(timer_alert_file,))
+        p=multiprocessing.Process(target=playaudio_wrapper,args=(timer_alert_file,self.bg,))
         p.start()
-        while stopper!=keys.ENTER:
-            stopper=getkey()
-        p.terminate()
+        if not self.bg:
+            while stopper!=keys.ENTER:
+                stopper=getkey()
+            p.terminate()
 
 
 class Stopwatch:
@@ -252,13 +274,17 @@ ascii_main='''
 '''
 clear_line='\t                    '
 class Alarm:
-    def __init__(self,hour,minute,period,custom_message='Waky waky, eggs n\' baky!'):
+    def __init__(self,hour,minute,period,custom_message='Waky waky, eggs n\' baky!',bg=False):
         self.hour=hour
         self.minute=minute
         self.period=period
         self.custom_message=custom_message
+        self.bg = bg
 
     def start(self,verbose=True):
+        if self.bg:
+            if os.fork():
+                exit()
         current_time = ''
         hour = self.hour
         minute = self.minute
@@ -273,14 +299,16 @@ class Alarm:
             minute = '0'+str(minute)
 
         alarm_time = f'{hour}:{minute}:00'
-        print('\tPress ctrl+c to cancel alarm. Starting. . .\n')
+        if not self.bg:
+            print('\tPress ctrl+c to cancel alarm. Starting. . .\n')
         try:
             while current_time!=alarm_time:
                 current_time = datetime.now().strftime("%H:%M:%S")
-                if verbose:
+                if verbose and not self.bg:
                     print(f'\tAlarm set for {COLOR_TEMPLATE.format(51)}{alarm_time}{RESET_COLOR}, current time: {COLOR_TEMPLATE.format(208)}{current_time}{RESET_COLOR}',end='\r')
                 time.sleep(1)
-            print()
+            if not self.bg:
+                print()
             self.alert()
         except KeyboardInterrupt:
             print("\n\n\tAlarm has been cancelled. ")
@@ -288,15 +316,17 @@ class Alarm:
         
     def alert(self):
         stopper=''
-        print(ascii_alert)
-        print('\t   '+colorize(self.custom_message,118))
-        print('\t   '+colorize('PRESS ENTER TO STOP',42))
+        if not self.bg:
+            print(ascii_alert)
+            print('\t   '+colorize(self.custom_message,118))
+            print('\t   '+colorize('PRESS ENTER TO STOP',42))
         os.chdir(sound_dir)
-        p=multiprocessing.Process(target=playaudio_wrapper,args=(alarm_alert_file,))
+        p=multiprocessing.Process(target=playaudio_wrapper,args=(alarm_alert_file,self.bg,))
         p.start()
-        while stopper!=keys.ENTER:
-            stopper=getkey()
-        p.terminate()
+        if not self.bg:
+            while stopper!=keys.ENTER:
+                stopper=getkey()
+            p.terminate()
 
 def getunitvalue(unit):
     #returns a number ranging from 0 to 59 for units second and minute, controlleed by arrow keys
@@ -382,37 +412,45 @@ def displayinteractivemenu():
     print("\t "+colorize("'S' to start new stopwatch",color3))
     print("\t "+colorize("'Q' or 'E' to exit: ",color4),end='')
 
-def interactive():
+def interactive(args):
+    ask=True
     while True:
-        displayinteractivemenu()
-        opt = input().lower()
+        if ask:
+            displayinteractivemenu()
+            opt = input().lower()
+        else:
+            break
         if opt=='q' or opt=='e':
             break
         if opt=='a':
-            alarm = create_new_alarm()
+            alarm = create_new_alarm(args.background)
             print('\n')
             alarm.start()
+            if args.background:
+                ask=False
         elif opt=='t':
-            timer = create_new_timer()
+            timer = create_new_timer(args.background)
             print('\n')
             timer.start()
+            if args.background:
+                ask=False
         elif opt=='s':
             stopwatch = Stopwatch()
             stopwatch.start()
             print()
 
-def create_new_timer():
+def create_new_timer(bg=False):
     hours = getunitvalue('Hour')
     minutes = getunitvalue('Minute')
     seconds = getunitvalue('Second')
-    timer = Timer(hours,minutes,seconds)
+    timer = Timer(hours,minutes,seconds,bg=bg)
     return timer
 
-def create_new_alarm():
+def create_new_alarm(bg=False):
     hour = gethour()
     minute = getunitvalue('Minute')
     period = getperiod()
-    alarm = Alarm(hour,minute,period)
+    alarm = Alarm(hour,minute,period,bg=bg)
     return alarm
             
 
@@ -422,16 +460,17 @@ def main():
     parser.add_argument("-t","--timer",help="Set a new timer",action="store_true")
     parser.add_argument("-a","--alarm",help="Set a new alarm",action="store_true")
     parser.add_argument("-s","--stopwatch",help="Start a new stopwatch",action="store_true")
+    parser.add_argument("-b","--background",help="Run in background",action="store_true")
 
     args = parser.parse_args()
     # interactive()
     if args.timer:
-        timer = create_new_timer()
+        timer = create_new_timer(args.background)
         print('\n')
         timer.start()
 
     if args.alarm:
-        alarm = create_new_alarm()
+        alarm = create_new_alarm(args.background)
         print('\n')
         alarm.start()
 
@@ -441,7 +480,7 @@ def main():
 
 
     if (not args.timer and not args.alarm and not args.stopwatch) or args.interactive:
-        interactive()
+        interactive(args)
 
 if __name__ == '__main__':
     main()

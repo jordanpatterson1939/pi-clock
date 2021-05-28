@@ -42,4 +42,5 @@ optional arguments:
 ```
 
 Todo:
-- [ ] Allow alarms to run in the background while in intercative mode.
+- [x] Allow alarms to run in the background while in intercative mode.
+- [ ] Add inline args to set hours, minutes and seconds of alarm/timer.
